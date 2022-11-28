@@ -2,19 +2,15 @@ require('dotenv').config()
 const express = require('express');
 const app = express();
 const path = require('path');
-
 //function to create events in logs folder(filename reqLog) 
 const { logger } = require('./middleware/logger');
-
 // handles error and create error file in logs folder(filename errLog)
 const errorHandler = require('./middleware/errorHandler');
 
 const cookieParser = require('cookie-parser')
-
 // which origins can access the API
 const cors = require('cors')
 const corsOptions = require('./config/corsOptions')
-
 // connection to mongoDB
 const connectDB = require('./config/dbConnection')
 const mongoose = require('mongoose')
@@ -29,8 +25,10 @@ app.use(express.json());
 app.use(cookieParser())
 
 app.use(express.static('public'));
-
+//home route
 app.use('/', require('./routes/root'));
+//users route
+app.use('/users', require('./routes/userRoutes'))
 
 app.all('*', (req, res) => {
   res.status(404);
@@ -43,13 +41,13 @@ app.all('*', (req, res) => {
   }
 }); 
 
+//error handler middleware
 app.use(errorHandler);
 
 mongoose.connection.once('open',()=>{
   console.log('connected to mongoDB')
   app.listen(PORT, () => console.log(`listening to PORT :${PORT}`))
 })
-
 
 mongoose.connection.on('error', err=>{
   console.log(err)
