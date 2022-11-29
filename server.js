@@ -18,12 +18,14 @@ const {logEvents}  = require('./middleware/logger')
 const PORT = process.env.PORT || 3500;
 
 console.log(process.env.NODE_ENV)
+
+// data base connnection
 connectDB()
 app.use(logger);
 app.use(cors(corsOptions))
 app.use(express.json());
 app.use(cookieParser())
-
+//static files from public folder
 app.use(express.static('public'));
 //home route
 app.use('/', require('./routes/root'));
@@ -41,7 +43,7 @@ app.all('*', (req, res) => {
   }
 }); 
 
-//error handler middleware
+//error handler middleware custom
 app.use(errorHandler);
 
 mongoose.connection.once('open',()=>{

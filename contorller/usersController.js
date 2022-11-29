@@ -10,7 +10,7 @@ const bcrypt = require('bcrypt');
 const getAllUsers = asyncHandler(async (req, res) => {
   //select- do not return password, lean() - gives plain javascript object (not mongoose object, faster this way)
   const users = await User.find().select('-password').lean();
-  !users
+  !users?.length
     ? res.status(400).json({ message: 'No users found' })
     : res.json(users);
 });
@@ -24,16 +24,17 @@ const creatUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'All fields are required' });
   }
   // exec() - will return a promise
-  const duplicate = await User.find({ username }).lean().exec();
+  const duplicate = await User.findOne({ username }).lean().exec();
+  console.log(duplicate)
   if (duplicate) {
-    return res.status(409).json({ message: 'Username not available' });
+    return res.status(409).json({ message: 'Username already exist' });
   }
   //hashed password
   const hashedPassword = await bcrypt.hash(password, 10); // salt rounds
   const userObject = { username, password: hashedPassword, roles };
   const user = await User.create(userObject);
   if (user) {
-    res.status(201).json({ message: `New user ${username} created` });
+    res.status(201).json({ message: `New ${roles} ${username} created` });
   } else {
     res.status(400).json({ message: 'Invalid user data recived' });
   }
@@ -61,7 +62,7 @@ const updateUser = asyncHandler(async (req, res) => {
   if (duplicate && duplicate._id.toString() !== id) {
     return res
       .status(409)
-      .json({ message: 'Duplicate username try another one' });
+      .json({ message: 'Username already exist try another one' });
   }
   user.username = username;
   user.roles = roles;
@@ -84,9 +85,8 @@ const deleteUser = asyncHandler(async (req, res) => {
   if(!id){
     return res.status(400).json({message:'user ID required'})
   }
-  const notes = await Note.findOne({user:id}).lean().exec()
-  //optional chaining
-  if(notes?.length ){
+  const note = await Note.findOne({user:id}).lean().exec()
+  if(note){
     return res.status(400).json({message:`User has assigned notes`})
   }
   const user = await User.findById(id).exec()
@@ -94,8 +94,8 @@ const deleteUser = asyncHandler(async (req, res) => {
   if(!user){
     return res.status(400).json({message:'User not found'})
   }
-  const result = await User.deleteOne()
-  const reply = `Username ${result.username} with ID ${_id}`
+  const result = await user.deleteOne()
+  const reply = `Username ${result.username} with ID ${id}`
   res.json(reply)
 });
 
